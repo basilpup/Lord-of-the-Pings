@@ -1,0 +1,14 @@
+{"run_id": "benign_01", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:00:00.000Z", "end_ts": "2026-10-05T15:02:00.000Z", "params": {"duration_s": 120, "events_per_s": 0.3}}
+{"run_id": "attack_01", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:02:05.000Z", "end_ts": "2026-10-05T15:02:06.998Z", "params": {"events_per_s": 40, "pattern": "encrypt_rename", "files": 45}}
+{"run_id": "benign_02", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:02:11.998Z", "end_ts": "2026-10-05T15:04:41.998Z", "params": {"duration_s": 150, "events_per_s": 0.5}}
+{"run_id": "attack_02", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:04:46.998Z", "end_ts": "2026-10-05T15:04:47.437Z", "params": {"events_per_s": 150, "pattern": "rename_only", "files": 70}}
+{"run_id": "benign_03", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:04:52.437Z", "end_ts": "2026-10-05T15:06:52.437Z", "params": {"duration_s": 120, "events_per_s": 0.2}}
+{"run_id": "attack_03", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:06:57.437Z", "end_ts": "2026-10-05T15:07:01.723Z", "params": {"events_per_s": 15, "pattern": "encrypt_rename", "files": 30}}
+{"run_id": "benign_04", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:07:06.723Z", "end_ts": "2026-10-05T15:10:06.723Z", "params": {"duration_s": 180, "events_per_s": 0.8}}
+{"run_id": "attack_04", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:10:11.723Z", "end_ts": "2026-10-05T15:10:13.012Z", "params": {"events_per_s": 80, "pattern": "replace", "files": 60}}
+{"run_id": "benign_05", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:10:18.012Z", "end_ts": "2026-10-05T15:12:18.012Z", "params": {"duration_s": 120, "events_per_s": 0.4}}
+{"run_id": "attack_05", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:12:23.012Z", "end_ts": "2026-10-05T15:12:23.525Z", "params": {"events_per_s": 300, "pattern": "encrypt_rename", "files": 70}}
+{"run_id": "benign_06", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:12:28.525Z", "end_ts": "2026-10-05T15:14:58.525Z", "params": {"duration_s": 150, "events_per_s": 0.6}}
+{"run_id": "attack_06", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:15:03.525Z", "end_ts": "2026-10-05T15:15:06.485Z", "params": {"events_per_s": 25, "pattern": "replace", "files": 40}}
+{"run_id": "benign_07", "script": "sample_benign", "label": 0, "start_ts": "2026-10-05T15:15:11.485Z", "end_ts": "2026-10-05T15:16:41.485Z", "params": {"duration_s": 90, "events_per_s": 0.5}}
+{"run_id": "attack_07", "script": "sample_attack", "label": 1, "start_ts": "2026-10-05T15:15:51.485Z", "end_ts": "2026-10-05T15:15:52.835Z", "params": {"events_per_s": 60, "pattern": "encrypt_rename", "files": 40, "note": "overlaps benign run"}

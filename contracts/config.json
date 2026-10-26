@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "watch_root": "/home/analyst",
+  "canary_paths": [
+    "/home/analyst/Documents/passwords.docx",
+    "/home/analyst/Documents/tax_return_2025.pdf",
+    "/home/analyst/Documents/payroll.xlsx",
+    "/home/analyst/Desktop/client_list.csv",
+    "/home/analyst/backups/db_dump.sql",
+    "/home/analyst/.config/app/credentials.conf",
+    "/home/analyst/Pictures/passport_scan.jpg",
+    "/home/analyst/projects/keys/id_backup.pem"
+  ],
+  "events_path": "/var/log/canary/events.jsonl",
+  "manifest_path": "/var/log/canary/manifest.jsonl",
+  "alerts_path": "/var/log/canary/alerts.jsonl",
+  "window_seconds": 1.0,
+  "step_seconds": 0.25
+}

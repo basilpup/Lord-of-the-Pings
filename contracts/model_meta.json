@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "placeholder": true,
+  "note": "Dummy model trained on synthetic sample data. For wiring and testing only.",
+  "feature_columns": [
+    "event_count",
+    "n_create",
+    "n_modify",
+    "n_rename",
+    "n_delete",
+    "n_ext_change",
+    "n_unique_files",
+    "n_canary_touched",
+    "mean_gap_ms",
+    "min_gap_ms",
+    "mean_entropy",
+    "max_entropy",
+    "n_unique_processes"
+  ],
+  "threshold": 0.5,
+  "window_seconds": 1.0,
+  "step_seconds": 0.25,
+  "python_version": "3.12.3",
+  "sklearn_version": "1.8.0"
+}
