@@ -1,1 +1,1 @@
-# Lord-of-the-Pings
+# Lord-of-the-Pings Installation Instructions
