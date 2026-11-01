@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "watch_root": "/home/vboxuser/file-detection-pings/lab-watch",
+  "canary_paths": [
+    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_01.txt",
+    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_02.txt",
+    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_03.txt",
+    "/home/vboxuser/file-detection-pings/lab-watch/documents/canary_document.txt",
+    "/home/vboxuser/file-detection-pings/lab-watch/downloads/canary_download.txt",
+    "/home/vboxuser/file-detection-pings/lab-watch/projects/canary_project.txt"
+  ],
+  "events_path": "/home/vboxuser/file-detection-pings/datasets/raw/events/events.jsonl",
+  "manifest_path": "/home/vboxuser/file-detection-pings/datasets/raw/manifests/manifest.jsonl",
+  "alerts_path": "/home/vboxuser/file-detection-pings/logs/alerts.jsonl",
+  "window_seconds": 1.0,
+  "step_seconds": 0.25
+}
