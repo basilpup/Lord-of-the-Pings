@@ -8,7 +8,11 @@ from datetime import datetime, timezone
 PROJECT = Path(__file__).resolve().parent
 BASE_DIR = PROJECT / "lab-watch" / "attack_run"
 MANIFEST_PATH = PROJECT / "datasets/raw/manifests/manifest.jsonl"
-
+CANARY_FILES = [
+    PROJECT / "lab-watch/documents/canary_document.txt",
+    PROJECT / "lab-watch/downloads/canary_download.txt",
+    PROJECT / "lab-watch/projects/canary_project.txt"
+]
 FILE_TYPES = [
     ".txt",
     ".csv",
@@ -47,6 +51,18 @@ def create_dummy_file(folder, filename):
         encoding="utf-8"
     )
     return file_path
+
+def edit_canaries():
+
+    for canary in CANARY_FILES:
+        if canary.exists() and canary.is_file():
+            with open(canary, "a", encoding="utf-8") as f:
+                f.write(
+                    f"Canary edit at {timestamp()}\n"
+                )
+
+            print(f"Modded: {canary.name}")
+            time.sleep(random.uniform(0.1, 0.3))
 
 def main():
     run_id = "attack_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
@@ -114,6 +130,9 @@ def main():
             f.write("Adding evil\n")
         time.sleep(random.uniform(0.01, 0.2))
 
+    print("Canary")
+    edit_canaries()
+
     print("Bulk deletion")
     for file_path in changed_files[:10]:
         if file_path.exists():
@@ -123,6 +142,7 @@ def main():
         if file_path.exists():
             file_path.unlink()
         time.sleep(random.uniform(0.05, 0.2))
+
     end_ts = timestamp()
 
     record_run(run_id, start_ts, end_ts)
