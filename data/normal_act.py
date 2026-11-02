@@ -83,7 +83,7 @@ def main():
         "Project stuff\n",
         encoding="utf-8"
     )
-    time.sleep(random.uniform(20))
+    time.sleep(random.uniform(4,10))
 
     print("Copy files")
     copied_files = []
