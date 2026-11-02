@@ -71,7 +71,7 @@ def record_event(operation, path, old_path=None):
     process_exe = process_info["exe"] if process_info else None
 
     event = {
-        "ts": timestamp(), # time the event was recorded
+        "ts": timestamp(event_time), # time the event was recorded
         "op": operation, # type of op
         "path": path, # current file path
         "old_path": old_path, # old file path
