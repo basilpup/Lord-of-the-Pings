@@ -3,6 +3,7 @@ import json
 import math
 from pathlib import Path
 from datetime import datetime, UTC
+from audit_reader import find_process_for_path
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -19,8 +20,8 @@ CANARIES = {
     str(Path(p).resolve()) for p in CONFIG["canary_paths"]
 }
 
-def timestamp():
-    return datetime.now(UTC).isoformat(timespec="milliseconds")
+def timestamp(event_time):
+    return datetime.fromtimestamp(event_time, tz=UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 # calculate entropy
 def file_entropy(path):
@@ -48,12 +49,27 @@ def file_entropy(path):
 
 
 def record_event(operation, path, old_path=None):
+    event_time = time.time()
     path = str(Path(path).resolve())
     old_path = str(Path(old_path).resolve()) if old_path else None
     try: 
         size = Path(path).stat().st_size
     except OSError:
         size = None
+
+    process_info = None
+    try: 
+        process_info = find_process_for_path(path, event_time)
+
+        if process_info is None and old_path is not None:
+            process_info = find_process_for_path(old_path, event_time)
+    except (OSError, RuntimeError) as error:
+        print(error)
+
+    process_pid = process_info["pid"] if process_info else None
+    process_name = process_info["process_name"] if process_info else None
+    process_exe = process_info["exe"] if process_info else None
+
     event = {
         "ts": timestamp(), # time the event was recorded
         "op": operation, # type of op
@@ -64,14 +80,17 @@ def record_event(operation, path, old_path=None):
         "is_canary": path in CANARIES or old_path in CANARIES, # if the event involved a canary file
         "size_bytes": size, # file size
         "entropy": file_entropy(path) if size is not None else None, # calculated entropy
-        "pid": None, # process ID
-        "process_name": None # process name
+        "pid": process_pid, # process ID
+        "process_name": process_name, # process name
+        "process_exe": process_exe # process location
     }
 
     with open(EVENTS_PATH, "a", encoding="utf-8") as f: # writes the event to the JSON file
         f.write(json.dumps(event) + "\n")
         f.flush()
-    print(operation, path)
+    print(f"{operation}: {path}"
+    f"PID: {process_pid}"
+    f"Process name: {process_name}")
 
 # which events are created when watchdog detects a change
 class ActivityHandler(FileSystemEventHandler):
@@ -79,7 +98,8 @@ class ActivityHandler(FileSystemEventHandler):
         if not event.is_directory:
             record_event("create", event.src_path)
     def on_modified(self, event):
-        record_event("modify", event.src_path)
+        if not event.is_directory:
+            record_event("modify", event.src_path)
     def on_deleted(self, event):
         if not event.is_directory:
             record_event("delete", event.src_path)
