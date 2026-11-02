@@ -84,6 +84,7 @@ def record_event(operation, path, old_path=None):
         "process_name": process_name, # process name
         "process_exe": process_exe # process location
     }
+    EVENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with open(EVENTS_PATH, "a", encoding="utf-8") as f: # writes the event to the JSON file
         f.write(json.dumps(event) + "\n")
