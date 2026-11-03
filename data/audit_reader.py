@@ -6,21 +6,32 @@ from pathlib import Path
 AUDIT_KEY = "file_lab"
 MATCH_TOLERANCE_SECONDS = 3.0
 
-# Patterns for extracting audit record information.
+
+# Matches the timestamp and serial number in an audit event.
+# Example: msg=audit(1793650000.123:456)
 HEADER_PATTERN = re.compile(
     r"msg=audit\((\d+(?:\.\d+)?):(\d+)\)"
 )
 
+
+# Patterns for extracting fields from audit records.
 FIELD_PATTERNS = {
     "pid": re.compile(r"\bpid=(\d+)"),
-    "process_name": re.compile(r'\bcomm=("(?:\\.|[^"])*"|\S+)'),
-    "exe": re.compile(r'\bexe=("(?:\\.|[^"])*"|\S+)'),
-    "name": re.compile(r'\bname=("(?:\\.|[^"])*"|\S+)'),
+    "process_name": re.compile(
+        r'\bcomm=("(?:\\.|[^"])*"|\S+)'
+    ),
+    "exe": re.compile(
+        r'\bexe=("(?:\\.|[^"])*"|\S+)'
+    ),
+    "name": re.compile(
+        r'\bname=("(?:\\.|[^"])*"|\S+)'
+    ),
 }
 
 
 def extract_field(pattern, text):
-    """Gets the first matching field from an audit record."""
+    """Extracts the first matching field from an audit record."""
+
     match = pattern.search(text)
 
     if not match:
@@ -28,6 +39,7 @@ def extract_field(pattern, text):
 
     value = match.group(1)
 
+    # Decode quoted values, including escaped characters.
     if value.startswith('"'):
         try:
             value = ast.literal_eval(value)
@@ -38,7 +50,10 @@ def extract_field(pattern, text):
 
 
 def read_audit_events():
-    """Reads and groups audit records by event ID."""
+    """
+    Reads audit records using ausearch and groups records
+    by their timestamp and serial number.
+    """
 
     result = subprocess.run(
         ["ausearch", "-k", AUDIT_KEY, "--raw"],
@@ -56,6 +71,7 @@ def read_audit_events():
 
     for line in result.stdout.splitlines():
 
+        # Extract the audit event ID.
         header = HEADER_PATTERN.search(line)
 
         if not header:
@@ -66,9 +82,11 @@ def read_audit_events():
 
         event_id = (timestamp, serial)
 
+        # Create a new event if it has not been seen before.
         if event_id not in events:
             events[event_id] = {
                 "timestamp": timestamp,
+                "serial": serial,
                 "pid": None,
                 "process_name": None,
                 "exe": None,
@@ -77,6 +95,7 @@ def read_audit_events():
 
         event = events[event_id]
 
+        # Extract process information from SYSCALL records.
         if line.startswith("type=SYSCALL"):
 
             event["pid"] = extract_field(
@@ -91,6 +110,7 @@ def read_audit_events():
                 FIELD_PATTERNS["exe"], line
             )
 
+        # Extract filenames from PATH records.
         elif line.startswith("type=PATH"):
 
             name = extract_field(
@@ -104,21 +124,35 @@ def read_audit_events():
 
 
 def find_process_for_path(path, event_timestamp):
-    """Finds the closest audit event matching a watchdog file event."""
+    """
+    Finds the closest audit event matching a watchdog file event.
+    Returns process information or None if no match is found.
+    """
 
     target_path = str(Path(path).resolve())
 
     audit_events = read_audit_events()
+
     matches = []
 
     for event in audit_events:
 
-        if target_path not in event["paths"]:
+        # Check whether the audit event contains this file path.
+        matching_path = False
+
+        for audit_path in event["paths"]:
+            if str(Path(audit_path).resolve()) == target_path:
+                matching_path = True
+                break
+
+        if not matching_path:
             continue
 
+        # A PID is required for a useful process match.
         if event["pid"] is None:
             continue
 
+        # Calculate the difference between timestamps.
         difference = abs(
             event["timestamp"] - event_timestamp
         )
@@ -129,6 +163,7 @@ def find_process_for_path(path, event_timestamp):
     if not matches:
         return None
 
+    # Select the closest timestamp match.
     matches.sort(key=lambda item: item[0])
 
     best_match = matches[0][1]
@@ -138,3 +173,26 @@ def find_process_for_path(path, event_timestamp):
         "process_name": best_match["process_name"],
         "exe": best_match["exe"]
     }
+
+
+if __name__ == "__main__":
+
+    print("Reading audit events...")
+
+    try:
+        events = read_audit_events()
+
+        events_with_paths = [
+            event for event in events if event["paths"]
+        ]
+
+        print(f"Total audit events: {len(events)}")
+        print(f"Events containing paths: {len(events_with_paths)}")
+
+        print("\nSample events:")
+
+        for event in events_with_paths[:5]:
+            print(event)
+
+    except (OSError, RuntimeError) as error:
+        print(f"Audit reader error: {error}")
