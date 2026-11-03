@@ -16,13 +16,12 @@ class ActivityPacer:
     """Vary activity timing to avoid identical event patterns."""
 
     def __init__(self):
-        self.mode = "slow/mixed/burst"
+        self.mode = self.mode = random.choices(population=["slow", "mixed", "burst"], weights=[10, 30, 60], k=1)[0]
 
     def pause(self):
-        mode = random.choices(population=["slow", "mixed", "burst"], weights=[10, 30, 60], k=1)[0]
-        if mode == "slow":
+        if self.mode == "slow":
             time.sleep(random.uniform(1.0, 2.0))
-        elif mode == "mixed":
+        elif self.mode == "mixed":
             time.sleep(random.uniform(0.5, 1))
         else:
             time.sleep(random.uniform(0.02, 0.1))
