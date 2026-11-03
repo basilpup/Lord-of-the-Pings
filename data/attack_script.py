@@ -243,7 +243,7 @@ def run_activity(name, pattern):
     print(f"Timing mode: {pacer.mode}")
     pattern(folder, pacer)
 
-    # Only selected attack patterns interact with canaries.
+    # Only selected attack patterns interact with canaries
     if name in ("canary_batch", "mixed_cleanup"):
         touch_canaries()
 

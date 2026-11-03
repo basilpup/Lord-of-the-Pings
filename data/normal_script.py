@@ -49,7 +49,7 @@ class ActivityPacer:
 
     def pause(self):
         if self.mode == "slow":
-            time.sleep(random.uniform(1.0, 2.0))
+            time.sleep(random.uniform(1.0, 4.0))
         elif self.mode == "mixed":
             time.sleep(random.uniform(0.5, 1))
         else:
@@ -419,9 +419,10 @@ def run_activity(name, pattern):
 
     pattern(folder, pacer)
 
-    # Only selected normal patterns interact with canaries.
+    # Only selected normal patterns interact with canaries
     if name in ("folders", "mixed"):
-        touch_normal_canaries()
+        if random.random() < 0.15: # gives normal a 15% chance of interact with canaries
+            touch_normal_canaries()
 
     end_ts = timestamp()
     record_run(run_id, start_ts, end_ts, 0)
