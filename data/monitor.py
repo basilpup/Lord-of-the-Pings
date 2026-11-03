@@ -66,9 +66,9 @@ def record_event(operation, path, old_path=None):
     except (OSError, RuntimeError) as error:
         print(error)
 
-    process_pid = process_info.get["pid"] if process_info else None
-    process_name = process_info.get["process_name"] if process_info else None
-    process_exe = process_info.get["exe"] if process_info else None
+    process_pid = process_info["pid"] if process_info else None
+    process_name = process_info["process_name"] if process_info else None
+    process_exe = process_info["exe"] if process_info else None
 
     event = {
         "ts": timestamp(event_time), # time the event was recorded
