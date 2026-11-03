@@ -2,12 +2,14 @@
   "schema_version": 1,
   "watch_root": "/home/vboxuser/file-detection-pings/lab-watch",
   "canary_paths": [
-    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_01.txt",
-    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_02.txt",
-    "/home/vboxuser/file-detection-pings/lab-watch/canaries/canary_03.txt",
-    "/home/vboxuser/file-detection-pings/lab-watch/documents/canary_document.txt",
-    "/home/vboxuser/file-detection-pings/lab-watch/downloads/canary_download.txt",
-    "/home/vboxuser/file-detection-pings/lab-watch/projects/canary_project.txt"
+     "/home/vboxuser/file-detection-pings/lab-watch/canaries/Documents/passwords.docx",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/Documents/tax_return_2025.pdf",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/Documents/payroll.xlsx",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/Desktop/client_list.csv",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/backups/db_dump.sql",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/.config/app/credentials.conf",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/Pictures/passport_scan.jpg",
+      "/home/vboxuser/file-detection-pings/lab-watch/canaries/projects/keys/id_backup.pem"
   ],
   "events_path": "/home/vboxuser/file-detection-pings/datasets/raw/events/events.jsonl",
   "manifest_path": "/home/vboxuser/file-detection-pings/datasets/raw/manifests/manifest.jsonl",

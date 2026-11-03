@@ -15,13 +15,7 @@ FILE_TYPES = [
     ".json",
     ".md",
     ".py",
-    ".html",
     ".log",
-    ".pdf",
-    ".docx",
-    ".xlsx",
-    ".jpg",
-    ".png"
 ]
 
 def timestamp():
