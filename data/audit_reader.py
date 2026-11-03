@@ -4,15 +4,42 @@ import subprocess
 from pathlib import Path
 
 AUDIT_KEY = "file_lab"
+MATCH_TOLERANCE_SECONDS = 3.0
 
-MATCH_TOLERANCE_SECONDS = 3.0 # max time difference allowed netween an audit record and a watchdog event
+# Patterns for extracting audit record information.
+HEADER_PATTERN = re.compile(
+    r"msg=audit\((\d+(?:\.\d+)?):(\d+)\)"
+)
 
-"""Gets the first matching field from an audit record"""
+FIELD_PATTERNS = {
+    "pid": re.compile(r"\bpid=(\d+)"),
+    "process_name": re.compile(r'\bcomm=("(?:\\.|[^"])*"|\S+)'),
+    "exe": re.compile(r'\bexe=("(?:\\.|[^"])*"|\S+)'),
+    "name": re.compile(r'\bname=("(?:\\.|[^"])*"|\S+)'),
+}
+
+
 def extract_field(pattern, text):
-    match = re.search(pattern, text)
-    return match.group(1) if match else None
+    """Gets the first matching field from an audit record."""
+    match = pattern.search(text)
 
-def read_audit_events(): 
+    if not match:
+        return None
+
+    value = match.group(1)
+
+    if value.startswith('"'):
+        try:
+            value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            value = value.strip('"')
+
+    return value
+
+
+def read_audit_events():
+    """Reads and groups audit records by event ID."""
+
     result = subprocess.run(
         ["ausearch", "-k", AUDIT_KEY, "--raw"],
         capture_output=True,
@@ -24,21 +51,22 @@ def read_audit_events():
         raise RuntimeError(
             f"Couldn't read audit records: {result.stderr.strip()}"
         )
+
     events = {}
 
-    for line in result.stdout.splitlines(): # processes each line returned by ausearch
-        header = re.search(
-            r"msg=audit\((\d+(?:\.\d+)?):(\d+)\)", # gets the audit timestamp and serial number
-            line 
-        )
-        if not header: 
+    for line in result.stdout.splitlines():
+
+        header = HEADER_PATTERN.search(line)
+
+        if not header:
             continue
 
         timestamp = float(header.group(1))
         serial = header.group(2)
- 
-        event_id = (timestamp, serial) 
-        if event_id not in events: # create an event entry if this is the first record for this audit event
+
+        event_id = (timestamp, serial)
+
+        if event_id not in events:
             events[event_id] = {
                 "timestamp": timestamp,
                 "pid": None,
@@ -47,78 +75,65 @@ def read_audit_events():
                 "paths": []
             }
 
-        event = events[event_id] # get event dictionary we are updating
+        event = events[event_id]
 
-        if line.startswith("type=SYSCALL"): # ADD COMMENT
+        if line.startswith("type=SYSCALL"):
+
             event["pid"] = extract_field(
-                r"\bpid=(\d+)",
-                line
+                FIELD_PATTERNS["pid"], line
             )
 
-            event["process_name"] = extract_field( # ADD COMMENT
-                r'\bcomm=("(?:\\.|[^"])*"|\S+)',
-                line
+            event["process_name"] = extract_field(
+                FIELD_PATTERNS["process_name"], line
             )
 
-            event["exe"] = extract_field( # ADD COMMENT
-                r'\bexe=("(?:\\.|[^"])*"|\S+)',
-                line
+            event["exe"] = extract_field(
+                FIELD_PATTERNS["exe"], line
             )
 
-            # strips quotation marks from the values
-            if event["process_name"]:
-                event["process_name"] = (
-                    event["process_name"].strip('"')
-                )
-            if event["exe"]:
-                event["exe"] = event["exe"].strip('"')
         elif line.startswith("type=PATH"):
+
             name = extract_field(
-                r'\bname=("(?:\\.|[^"])*"|\S+)',
-                line
+                FIELD_PATTERNS["name"], line
             )
 
-            if name:
-                if name.startswith('"'):
-                    try:
-                        name = ast.literal_eval(name)
-                    except (ValueError, SyntaxError):
-                        pass
-                if name not in event["paths"]:
-                    event["paths"].append(name)
+            if name and name not in event["paths"]:
+                event["paths"].append(name)
 
-    return list(events.values()) # return all grouped audit events as a list
+    return list(events.values())
 
-# finds the audit event for a watchdog file event
+
 def find_process_for_path(path, event_timestamp):
-    target_path = str(Path(path).resolve()) # convert the path into an absolute path
-    audit_events = read_audit_events() # gets audit events from auditd
-    matches = [] # stores possible matches and timestamps
+    """Finds the closest audit event matching a watchdog file event."""
 
-    for event in audit_events: # compare watchdog event with every audit event
-        if target_path not in event["paths"]: # ADD COMMENT
-            continue 
-        if event["pid"] is None:
+    target_path = str(Path(path).resolve())
+
+    audit_events = read_audit_events()
+    matches = []
+
+    for event in audit_events:
+
+        if target_path not in event["paths"]:
             continue
-        if event["process_name"] is None:
+
+        if event["pid"] is None:
             continue
 
         difference = abs(
-            event["timestamp"] - event_timestamp # calculates the difference between timestamps
+            event["timestamp"] - event_timestamp
         )
 
-        if difference <= MATCH_TOLERANCE_SECONDS:  # ADD COMMENT
-            matches.append(
-                (difference, event)
-            )
+        if difference <= MATCH_TOLERANCE_SECONDS:
+            matches.append((difference, event))
 
-    if not matches: # if no matches were found return none
+    if not matches:
         return None
 
-    matches.sort(key=lambda item: item[0]) # sorts matches by timestamp difference
-    best_match = matches[0][1] # gets the closest matching event
+    matches.sort(key=lambda item: item[0])
 
-    return{ # returns the match 
+    best_match = matches[0][1]
+
+    return {
         "pid": int(best_match["pid"]),
         "process_name": best_match["process_name"],
         "exe": best_match["exe"]
