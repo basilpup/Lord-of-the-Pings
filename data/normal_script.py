@@ -21,12 +21,7 @@ BASE_DIR = PROJECT / "lab-watch" / "normal"
 MANIFEST_PATH = PROJECT / "datasets" / "raw" / "manifests" / "manifest.jsonl"
 CONFIG_PATH = PROJECT / "config.json"
 
-ALL_EXTENSIONS = [
-    ".txt", ".md", ".log", ".py", ".json",
-    ".csv", ".docx", ".pdf", ".xlsx",
-    ".sql", ".conf", ".jpg", ".png", ".pem"
-]
-
+ALL_EXTENSIONS = [".txt", ".md", ".log", ".py", ".json", ".csv", ".docx", ".pdf", ".xlsx", ".sql", ".conf", ".jpg", ".png", ".pem"]
 
 def timestamp():
     """Return a UTC timestamp suitable for the run manifest."""
@@ -34,22 +29,16 @@ def timestamp():
         timespec="milliseconds"
     ).replace("+00:00", "Z")
 
-
 def random_text(lines=None):
     if lines is None:
         lines = random.randint(3, 12)
 
     samples = [
-        "Project notes for the current lab activity.",
-        "The document contains ordinary sample information.",
-        "Review the latest changes before saving the file.",
-        "This is synthetic data created for a filesystem lab.",
-        "The team discussed the next project milestone.",
-        "Remember to check the results after the activity.",
-        "A routine update was made to this sample document.",
-        "The example file contains no personal information."
+        "Sample notes",
+        "Regular information",
+        "Blah blah blah (normal)",
+        "Normal activity"
     ]
-
     return "\n".join(random.choice(samples) for _ in range(lines))
 
 
@@ -61,34 +50,24 @@ class ActivityPacer:
 
     def pause(self):
         if self.mode == "slow":
-            time.sleep(random.uniform(0.8, 2.0))
+            time.sleep(random.uniform(2.0, 5.0))
         elif self.mode == "burst":
-            time.sleep(random.uniform(0.02, 0.2))
+            time.sleep(random.uniform(0.02, 0.5))
         else:
-            time.sleep(random.uniform(0.2, 1.0))
+            time.sleep(random.uniform(0.5, 2.0))
 
 
 def random_filename(prefix="sample"):
     return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
-
 def random_file_count(minimum=3, maximum=10):
     return random.randint(minimum, maximum)
 
-
 def create_pem(path):
     """Create a disposable, unencrypted test private key."""
-    key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048
-    )
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
-    pem_data = key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption()
-    )
-
+    pem_data = key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.TraditionalOpenSSL, encryption_algorithm=serialization.NoEncryption())
     path.write_bytes(pem_data)
 
 
@@ -249,7 +228,6 @@ def make_files(folder, count=None, extensions=None, pacer=None):
 
     if count is None:
         count = random_file_count()
-
     if extensions is None:
         extensions = ALL_EXTENSIONS
 
@@ -263,7 +241,6 @@ def make_files(folder, count=None, extensions=None, pacer=None):
 
         if pacer:
             pacer.pause()
-
     return paths
 
 
@@ -273,10 +250,8 @@ def edit_selection(paths, pacer=None, fraction=1.0):
     if fraction < 1.0:
         amount = max(1, int(len(selected) * fraction))
         selected = random.sample(selected, min(amount, len(selected)))
-
     for path in selected:
         edit_sample(path)
-
         if pacer:
             pacer.pause()
 
@@ -288,7 +263,6 @@ def touch_normal_canaries():
 
     for raw_path in config["canary_paths"]:
         canary = Path(raw_path).resolve()
-
         try:
             canary.relative_to(watch_root)
         except ValueError:
@@ -314,51 +288,27 @@ def touch_normal_canaries():
         print(f"Normal activity touched canary: {canary.name}")
 
 
-# ---------------------------------------------------------
-# NORMAL ACTIVITY PATTERNS
-# ---------------------------------------------------------
-
 def normal_documents(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(4, 10),
-        [".txt", ".md", ".docx", ".pdf"],
-        pacer
-    )
+    paths = make_files( folder, random_file_count(4, 10), [".txt", ".md", ".docx", ".pdf"], pacer)
     edit_selection(paths, pacer, fraction=0.5)
 
 
 def normal_csv(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(3, 8),
-        [".csv", ".xlsx"],
-        pacer
-    )
+    paths = make_files(folder, random_file_count(3, 8), [".csv", ".xlsx"], pacer)
     edit_selection(paths, pacer, fraction=0.7)
 
 
 def normal_folders(folder, pacer):
     for subfolder_number in range(random.randint(3, 6)):
         subfolder = folder / f"folder_{subfolder_number}"
-        make_files(
-            subfolder,
-            random_file_count(2, 5),
-            [".txt", ".md", ".pdf", ".csv"],
-            pacer
-        )
+        make_files(subfolder, random_file_count(2, 5), [".txt", ".md", ".pdf", ".csv"], pacer)
 
 
 def normal_copy_move(folder, pacer):
     source = folder / "source"
     destination = folder / "organized"
 
-    paths = make_files(
-        source,
-        random_file_count(4, 9),
-        [".txt", ".pdf", ".docx", ".csv"],
-        pacer
-    )
+    paths = make_files(source, random_file_count(4, 9), [".txt", ".pdf", ".docx", ".csv"], pacer)
 
     destination.mkdir(parents=True, exist_ok=True)
 
@@ -371,61 +321,36 @@ def normal_copy_move(folder, pacer):
     moved.mkdir(parents=True, exist_ok=True)
 
     copied_files = list(destination.iterdir())
-    for path in random.sample(
-        copied_files,
-        min(len(copied_files), random.randint(1, 3))
-    ):
+    for path in random.sample(copied_files, min(len(copied_files), random.randint(1, 3)) ):
+
         shutil.move(str(path), str(moved / path.name))
         pacer.pause()
 
 
 def normal_rename(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(4, 10),
-        [".txt", ".md", ".csv", ".pdf"],
-        pacer
-    )
+    paths = make_files(folder, random_file_count(4, 10), [".txt", ".md", ".csv", ".pdf"], pacer)
 
     for path in paths:
-        new_path = path.with_name(
-            f"renamed_{uuid.uuid4().hex[:6]}{path.suffix}"
-        )
+        new_path = path.with_name(f"renamed_{uuid.uuid4().hex[:6]}{path.suffix}")
         path.rename(new_path)
         pacer.pause()
 
 
 def normal_code(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(4, 9),
-        [".py", ".json", ".sql", ".conf", ".md"],
-        pacer
-    )
+    paths = make_files(folder, random_file_count(4, 9), [".py", ".json", ".sql", ".conf", ".md"], pacer)
     edit_selection(paths, pacer, fraction=0.6)
-
 
 def normal_downloads(folder, pacer):
     download_folder = folder / "downloads"
 
-    paths = make_files(
-        download_folder,
-        random_file_count(5, 12),
-        [".pdf", ".jpg", ".png", ".docx", ".xlsx", ".txt"],
-        pacer
-    )
+    paths = make_files(download_folder, random_file_count(5, 12), [".pdf", ".jpg", ".png", ".docx", ".xlsx", ".txt"], pacer)
 
     # Some downloaded files are reviewed and modified.
     edit_selection(paths, pacer, fraction=0.3)
 
 
 def normal_mixed(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(8, 16),
-        ALL_EXTENSIONS,
-        pacer
-    )
+    paths = make_files(folder, random_file_count(8, 16), ALL_EXTENSIONS, pacer)
 
     edit_selection(paths, pacer, fraction=0.4)
 
@@ -433,33 +358,20 @@ def normal_mixed(folder, pacer):
     archive = folder / "archive"
     archive.mkdir(parents=True, exist_ok=True)
 
-    for path in random.sample(
-        paths,
-        min(len(paths), random.randint(2, 4))
-    ):
+    for path in random.sample(paths, min(len(paths), random.randint(2, 4))):
+
         shutil.copy2(path, archive / path.name)
         pacer.pause()
 
 
 def normal_pdf_png(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(5, 10),
-        [".pdf", ".png", ".jpg"],
-        pacer
-    )
+    paths = make_files(folder, random_file_count(5, 10), [".pdf", ".png", ".jpg"], pacer)
     edit_selection(paths, pacer, fraction=0.5)
 
 
 def normal_extended_formats(folder, pacer):
-    paths = make_files(
-        folder,
-        random_file_count(6, 12),
-        [".sql", ".conf", ".json", ".csv", ".pem", ".py"],
-        pacer
-    )
+    paths = make_files(folder, random_file_count(6, 12), [".sql", ".conf", ".json", ".csv", ".pem", ".py"], pacer)
     edit_selection(paths, pacer, fraction=0.4)
-
 
 PATTERNS = {
     "documents": normal_documents,
@@ -488,7 +400,6 @@ def record_run(run_id, start_ts, end_ts, label):
     with MANIFEST_PATH.open("a", encoding="utf-8") as file:
         file.write(json.dumps(record) + "\n")
 
-
 def run_activity(name, pattern):
     run_id = f"normal_{name}_{uuid.uuid4().hex[:10]}"
     folder = BASE_DIR / name / run_id
@@ -497,7 +408,7 @@ def run_activity(name, pattern):
     pacer = ActivityPacer()
     start_ts = timestamp()
 
-    print(f"\nStarting normal pattern: {name}")
+    print(f"\nStarting normal: {name}")
     print(f"Run ID: {run_id}")
     print(f"Timing mode: {pacer.mode}")
 
@@ -510,7 +421,7 @@ def run_activity(name, pattern):
     end_ts = timestamp()
     record_run(run_id, start_ts, end_ts, 0)
 
-    print(f"Completed normal pattern: {name}")
+    print(f"Completed normal: {name}")
 
 
 def main():
@@ -519,8 +430,7 @@ def main():
     for name, pattern in PATTERNS.items():
         run_activity(name, pattern)
 
-    print("\nAll normal activity patterns completed.")
-
+    print("\nNormal completed.")
 
 if __name__ == "__main__":
     main()

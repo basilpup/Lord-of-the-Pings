@@ -6,24 +6,15 @@ import time
 import uuid
 from pathlib import Path
 
-from normal import (
-    ALL_EXTENSIONS,
-    ActivityPacer,
-    create_sample,
-    edit_sample,
-    timestamp
-)
-
+from normal_script import (ALL_EXTENSIONS, ActivityPacer, create_sample,  edit_sample, timestamp)
 
 PROJECT = Path(__file__).resolve().parent
 BASE_DIR = PROJECT / "lab-watch" / "attack_run"
 MANIFEST_PATH = PROJECT / "datasets" / "raw" / "manifests" / "manifest.jsonl"
 CONFIG_PATH = PROJECT / "config.json"
 
-
 def load_config():
     return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-
 
 def touch_canaries():
     """
@@ -40,23 +31,15 @@ def touch_canaries():
         try:
             canary.relative_to(watch_root)
         except ValueError:
-            raise ValueError(
-                f"Canary path is outside watch_root: {canary}"
-            )
+            raise ValueError(f"Canary path is outside watch_root: {canary}")
 
         if not canary.exists():
             canary.parent.mkdir(parents=True, exist_ok=True)
-            canary.write_text(
-                "Lab canary file\n",
-                encoding="utf-8"
-            )
+            canary.write_text("Lab canary file\n",encoding="utf-8")
 
         # Append a harmless marker representing suspicious modification.
         with canary.open("a", encoding="utf-8") as file:
-            file.write(
-                f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n"
-            )
-
+            file.write(f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n")
         print(f"Attack simulation touched canary: {canary.name}")
 
 
@@ -78,7 +61,6 @@ def create_attack_files(folder, count, extensions=None, pacer=None):
 
         if pacer:
             pacer.pause()
-
     return paths
 
 
@@ -104,7 +86,6 @@ def copy_files(paths, destination, pacer):
             copied_paths.append(copied)
 
         pacer.pause()
-
     return copied_paths
 
 
@@ -122,9 +103,7 @@ def rename_to_simulated_locked(paths, pacer):
         new_path = path.with_name(path.name + ".locked-sim")
         path.rename(new_path)
         renamed_paths.append(new_path)
-
         pacer.pause()
-
     return renamed_paths
 
 
@@ -134,145 +113,69 @@ def delete_generated_files(paths, run_folder, pacer):
     the current attack run folder.
     """
     run_root = run_folder.resolve()
-
     for path in paths:
         resolved_path = path.resolve()
-
         try:
             resolved_path.relative_to(run_root)
         except ValueError:
-            raise ValueError(
-                f"Refusing to delete a file outside this run: {resolved_path}"
-            )
-
+            raise ValueError(f"Refusing to delete a file outside this run: {resolved_path}")
         if resolved_path.is_file():
             resolved_path.unlink()
-
         pacer.pause()
 
 def attack_burst(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(20, 40),
-        ALL_EXTENSIONS,
-        pacer
-    )
-
+    paths = create_attack_files(folder, random.randint(20, 40), ALL_EXTENSIONS, pacer)
     modify_files(paths, pacer, passes=2)
     rename_to_simulated_locked(paths, pacer)
-
 
 def attack_mass_rename(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(12, 30),
-        ALL_EXTENSIONS,
-        pacer
-    )
-
+    paths = create_attack_files(folder, random.randint(12, 30), ALL_EXTENSIONS, pacer)
     rename_to_simulated_locked(paths, pacer)
-
 
 def attack_repeated_modify(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(8, 20),
-        ALL_EXTENSIONS,
-        pacer
-    )
-
+    paths = create_attack_files(folder, random.randint(8, 20), ALL_EXTENSIONS, pacer)
     modify_files(paths, pacer, passes=3)
 
-
 def attack_copy_burst(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(10, 25),
-        ALL_EXTENSIONS,
-        pacer
-    )
-
-    copied = copy_files(
-        paths,
-        folder / "copies",
-        pacer
-    )
-
+    paths = create_attack_files(folder, random.randint(10, 25), ALL_EXTENSIONS, pacer)
+    copied = copy_files(paths, folder / "copies", pacer)
     rename_to_simulated_locked(copied, pacer)
 
-
 def attack_document_batch(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(10, 25),
-        [".docx", ".pdf", ".xlsx", ".csv"],
-        pacer
-    )
+    paths = create_attack_files(folder, random.randint(10, 25), [".docx", ".pdf", ".xlsx", ".csv"], pacer)
 
     modify_files(paths, pacer, passes=2)
     rename_to_simulated_locked(paths, pacer)
-
 
 def attack_image_batch(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(10, 25),
-        [".jpg", ".png", ".pdf"],
-        pacer
-    )
+    paths = create_attack_files(folder, random.randint(10, 25), [".jpg", ".png", ".pdf"], pacer)
 
     modify_files(paths, pacer, passes=2)
     rename_to_simulated_locked(paths, pacer)
-
 
 def attack_config_batch(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(10, 25),
-        [".sql", ".conf", ".json", ".csv", ".pem"],
-        pacer
-    )
+    paths = create_attack_files(folder, random.randint(10, 25), [".sql", ".conf", ".json", ".csv", ".pem"], pacer)
 
     modify_files(paths, pacer, passes=2)
     rename_to_simulated_locked(paths, pacer)
 
-
 def attack_extension_change(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(15, 30),
-        ALL_EXTENSIONS,
-        pacer
-    )
-
+    paths = create_attack_files(folder, random.randint(15, 30), ALL_EXTENSIONS, pacer)
     rename_to_simulated_locked(paths, pacer)
 
-
 def attack_mixed_cleanup(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(15, 30),
-        ALL_EXTENSIONS,
-        pacer
-    )
+    paths = create_attack_files(folder, random.randint(15, 30), ALL_EXTENSIONS, pacer)
 
     modify_files(paths, pacer, passes=2)
 
     # Copy files into a run-specific directory.
-    copied = copy_files(
-        paths,
-        folder / "temporary_copies",
-        pacer
-    )
+    copied = copy_files(paths, folder / "temporary_copies", pacer)
 
     # Delete only those copies created by this run.
     delete_generated_files(copied, folder, pacer)
 
     # Rename a selection of the original generated files.
-    selected = random.sample(
-        paths,
-        min(len(paths), random.randint(4, 10))
-    )
+    selected = random.sample(paths, min(len(paths), random.randint(4, 10)))
 
     rename_to_simulated_locked(selected, pacer)
 
@@ -305,14 +208,12 @@ PATTERNS = {
 
 def record_run(run_id, start_ts, end_ts, label):
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-
     record = {
         "run_id": run_id,
         "start_ts": start_ts,
         "end_ts": end_ts,
         "label": label
     }
-
     with MANIFEST_PATH.open("a", encoding="utf-8") as file:
         file.write(json.dumps(record) + "\n")
 
@@ -324,11 +225,9 @@ def run_activity(name, pattern):
 
     pacer = ActivityPacer()
     start_ts = timestamp()
-
-    print(f"\nStarting attack simulation: {name}")
+    print(f"\nStarting attack: {name}")
     print(f"Run ID: {run_id}")
     print(f"Timing mode: {pacer.mode}")
-
     pattern(folder, pacer)
 
     # Only selected attack patterns interact with canaries.
@@ -338,17 +237,14 @@ def run_activity(name, pattern):
     end_ts = timestamp()
     record_run(run_id, start_ts, end_ts, 1)
 
-    print(f"Completed attack simulation: {name}")
+    print(f"Completed attack: {name}")
 
 
 def main():
     BASE_DIR.mkdir(parents=True, exist_ok=True)
-
     for name, pattern in PATTERNS.items():
         run_activity(name, pattern)
-
-    print("\nAll attack simulation patterns completed.")
-
+    print("Attack completed.")
 
 if __name__ == "__main__":
     main()
