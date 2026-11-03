@@ -1,4 +1,3 @@
-
 import json
 import random
 import shutil
@@ -6,12 +5,27 @@ import time
 import uuid
 from pathlib import Path
 
-from normal_script import (ALL_EXTENSIONS, ActivityPacer, create_sample,  edit_sample, timestamp)
+from normal_script import (ALL_EXTENSIONS, create_sample,  edit_sample, timestamp)
 
 PROJECT = Path(__file__).resolve().parent
 BASE_DIR = PROJECT / "lab-watch" / "attack_run"
 MANIFEST_PATH = PROJECT / "datasets" / "raw" / "manifests" / "manifest.jsonl"
 CONFIG_PATH = PROJECT / "config.json"
+
+class ActivityPacer:
+    """Vary activity timing to avoid identical event patterns."""
+
+    def __init__(self):
+        self.mode = "slow/mixed/burst"
+
+    def pause(self):
+        mode = random.choices(population=["slow", "mixed", "burst"], weights=[10, 30, 60], k=1)[0]
+        if mode == "slow":
+            time.sleep(random.uniform(1.0, 2.0))
+        elif mode == "mixed":
+            time.sleep(random.uniform(0.5, 1))
+        else:
+            time.sleep(random.uniform(0.02, 0.1))
 
 def load_config():
     return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))

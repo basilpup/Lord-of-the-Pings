@@ -1,4 +1,3 @@
-
 import csv
 import json
 import random
@@ -46,15 +45,16 @@ class ActivityPacer:
     """Vary activity timing to avoid identical event patterns."""
 
     def __init__(self):
-        self.mode = random.choice(["slow", "mixed", "burst"])
+        self.mode = "slow/mixed/burst"
 
     def pause(self):
-        if self.mode == "slow":
-            time.sleep(random.uniform(2.0, 5.0))
-        elif self.mode == "burst":
-            time.sleep(random.uniform(0.02, 0.5))
+        mode = random.choices(population=["slow", "mixed", "burst"], weights=[60, 30, 10], k=1)[0]
+        if mode == "slow":
+            time.sleep(random.uniform(1.0, 2.0))
+        elif mode == "mixed":
+            time.sleep(random.uniform(0.5, 1))
         else:
-            time.sleep(random.uniform(0.5, 2.0))
+            time.sleep(random.uniform(0.02, 0.1))
 
 
 def random_filename(prefix="sample"):
