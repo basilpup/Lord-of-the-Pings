@@ -98,7 +98,7 @@ def build_dataset(events_path, manifest_path, out_path,
     rows = []
     for start, evs in windows_for(events, window_seconds, step_seconds).items():
         times = [parse_ts(e["ts"]) for e in evs]
-        hit = next((r for r in attack if any(r["s"] <= t <= r["e"] for t in times)), None)
+        hit = next((r for r in attack if any(r["s"] <= t < r["e"] for t in times)), None)
         owner = hit or next((r for r in runs if r["s"] <= min(times) <= r["e"]), None)
         row = {"run_id": owner["run_id"] if owner else "unknown",
                "window_start": format_ts(start)}
