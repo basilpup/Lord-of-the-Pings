@@ -269,6 +269,12 @@ def touch_normal_canaries():
                 f"Canary path is outside watch_root: {canary}"
             )
 
+        if canary.suffix.lower() not in {
+                    ".txt", ".log", ".csv", ".conf", ".sql", ".json"
+                }:
+                    print(f"Skipping non-text canary: {canary.name}")
+                    continue
+
         if not canary.exists():
             canary.parent.mkdir(parents=True, exist_ok=True)
             canary.write_text(

@@ -16,7 +16,7 @@ class ActivityPacer:
     """Vary activity timing to avoid identical event patterns."""
 
     def __init__(self):
-        self.mode = self.mode = random.choices(population=["slow", "mixed", "burst"], weights=[10, 30, 60], k=1)[0]
+        self.mode = random.choices(population=["slow", "mixed", "burst"], weights=[10, 30, 60], k=1)[0]
 
     def pause(self):
         if self.mode == "slow":
@@ -40,20 +40,20 @@ def touch_canaries():
     for raw_path in config["canary_paths"]:
         canary = Path(raw_path).resolve()
 
-        # Safety check: canaries must be inside the lab watch directory.
-        try:
-            canary.relative_to(watch_root)
-        except ValueError:
-            raise ValueError(f"Canary path is outside watch_root: {canary}")
+        if canary.suffix.lower() not in {
+            ".txt", ".log", ".csv", ".conf", ".sql", ".json"
+        }:
+            print(f"Skipping non-text canary: {canary.name}")
+            continue
 
         if not canary.exists():
             canary.parent.mkdir(parents=True, exist_ok=True)
-            canary.write_text("Lab canary file\n",encoding="utf-8")
+            canary.write_text("Lab canary file\n", encoding="utf-8")
 
-        # Append a harmless marker representing suspicious modification.
         with canary.open("a", encoding="utf-8") as file:
-            file.write(f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n")
-        print(f"Attack simulation touched canary: {canary.name}")
+            file.write(
+                f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n"
+            )
 
 
 def create_attack_files(folder, count, extensions=None, pacer=None):
