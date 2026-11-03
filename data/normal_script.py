@@ -45,7 +45,7 @@ class ActivityPacer:
     """Vary activity timing to avoid identical event patterns."""
 
     def __init__(self):
-        self.mode = self.mode = random.choices(population=["slow", "mixed", "burst"], weights=[60, 30, 10], k=1)[0]
+        self.mode = random.choices(population=["slow", "mixed", "burst"], weights=[60, 30, 10], k=1)[0]
 
     def pause(self):
         if self.mode == "slow":
@@ -254,45 +254,6 @@ def edit_selection(paths, pacer=None, fraction=1.0):
         if pacer:
             pacer.pause()
 
-
-def touch_normal_canaries():
-    """Perform harmless, routine interactions with configured canaries."""
-    config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    watch_root = Path(config["watch_root"]).resolve()
-
-    for raw_path in config["canary_paths"]:
-        canary = Path(raw_path).resolve()
-        try:
-            canary.relative_to(watch_root)
-        except ValueError:
-            raise ValueError(
-                f"Canary path is outside watch_root: {canary}"
-            )
-
-        if canary.suffix.lower() not in {
-                    ".txt", ".log", ".csv", ".conf", ".sql", ".json"
-                }:
-                    print(f"Skipping non-text canary: {canary.name}")
-                    continue
-
-        if not canary.exists():
-            canary.parent.mkdir(parents=True, exist_ok=True)
-            canary.write_text(
-                "Lab canary file\n",
-                encoding="utf-8"
-            )
-
-        # Ordinary read followed by an ordinary note.
-        canary.read_text(encoding="utf-8", errors="replace")
-
-        with canary.open("a", encoding="utf-8") as file:
-            file.write(
-                f"\nRoutine lab note: {timestamp()}\n"
-            )
-
-        print(f"Normal activity touched canary: {canary.name}")
-
-
 def normal_documents(folder, pacer):
     paths = make_files( folder, random_file_count(4, 10), [".txt", ".md", ".docx", ".pdf"], pacer)
     edit_selection(paths, pacer, fraction=0.5)
@@ -418,11 +379,6 @@ def run_activity(name, pattern):
     print(f"Timing mode: {pacer.mode}")
 
     pattern(folder, pacer)
-
-    # Only selected normal patterns interact with canaries
-    if name in ("folders", "mixed"):
-        if random.random() < 0.15: # gives normal a 15% chance of interact with canaries
-            touch_normal_canaries()
 
     end_ts = timestamp()
     record_run(run_id, start_ts, end_ts, 0)

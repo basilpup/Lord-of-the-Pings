@@ -32,29 +32,26 @@ def load_config():
 def touch_canaries():
     """
     Simulate suspicious modifications to the configured canary files.
-    This does not encrypt or destroy their contents.
     """
     config = load_config()
-    watch_root = Path(config["watch_root"]).resolve()
 
     for raw_path in config["canary_paths"]:
         canary = Path(raw_path).resolve()
-
-        if canary.suffix.lower() not in {
-            ".txt", ".log", ".csv", ".conf", ".sql", ".json"
-        }:
-            print(f"Skipping non-text canary: {canary.name}")
-            continue
 
         if not canary.exists():
             canary.parent.mkdir(parents=True, exist_ok=True)
             canary.write_text("Lab canary file\n", encoding="utf-8")
 
-        with canary.open("a", encoding="utf-8") as file:
-            file.write(
-                f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n"
-            )
-
+        # Open in append mode (or write mode if binary/non-text)
+        try:
+            with canary.open("a", encoding="utf-8") as file:
+                file.write(f"\nSIMULATED SUSPICIOUS MODIFICATION: {timestamp()}\n")
+            print(f"Touched canary: {canary.name}")
+        except Exception as e:
+            # Fallback for binary files if opening as utf-8 fails
+            with canary.open("ab") as file:
+                file.write(b"\nSIMULATED SUSPICIOUS MODIFICATION\n")
+            print(f"Touched binary canary: {canary.name}")
 
 def create_attack_files(folder, count, extensions=None, pacer=None):
     """Create files inside the current attack run directory."""
@@ -243,8 +240,8 @@ def run_activity(name, pattern):
     print(f"Timing mode: {pacer.mode}")
     pattern(folder, pacer)
 
-    # Only selected attack patterns interact with canaries
-    if name in ("canary_batch", "mixed_cleanup"):
+    # Trigger canaries for all batch/destructive attacks or whenever appropriate
+    if "batch" in name or "cleanup" in name or name == "canary_batch":
         touch_canaries()
 
     end_ts = timestamp()
