@@ -22,6 +22,7 @@ Usage:
 import argparse
 import json
 import math
+import os
 import queue
 import signal
 import threading
@@ -52,6 +53,20 @@ def file_entropy(path):
         return None
     n = len(data)
     return round(-sum(c / n * math.log2(c / n) for c in Counter(data).values()), 4)
+
+
+def make_user_owned(path):
+    """Create the events file (and its folders). When run with sudo, hand them
+    back to the real user, so the collection scripts (run without sudo) can
+    still write their own files next to them."""
+    path = Path(path)
+    missing = [p for p in [path.parent, *path.parent.parents] if not p.exists()]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)
+    uid, gid = os.environ.get("SUDO_UID"), os.environ.get("SUDO_GID")
+    if uid and gid:
+        for p in [path, *missing]:
+            os.chown(p, int(uid), int(gid))
 
 
 class ProcessLookup:
@@ -145,7 +160,7 @@ class Monitor(FileSystemEventHandler):
 
     # ---- slow path: writer thread ---------------------------------------------
     def _write_loop(self):
-        self.events_path.parent.mkdir(parents=True, exist_ok=True)
+        make_user_owned(self.events_path)
         with open(self.events_path, "a", encoding="utf-8") as f:
             while True:
                 item = self.q.get()
