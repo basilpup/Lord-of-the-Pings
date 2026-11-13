@@ -49,18 +49,29 @@ def extract_field(pattern, text):
     return value
 
 
-def read_audit_events():
+def read_audit_events(start=None):
     """
     Reads audit records using ausearch and groups records
     by their timestamp and serial number.
+
+    start: optional ausearch -ts value, e.g. "recent" (last 10 minutes).
+    Reading only recent records keeps each lookup fast as the log grows.
     """
 
+    command = ["ausearch", "-k", AUDIT_KEY, "--raw"]
+    if start:
+        command += ["-ts", start]
+
     result = subprocess.run(
-        ["ausearch", "-k", AUDIT_KEY, "--raw"],
+        command,
         capture_output=True,
         text=True,
         check=False
     )
+
+    # ausearch exits with 1 when nothing matches; that is not an error.
+    if result.returncode != 0 and "no matches" in (result.stderr + result.stdout).lower():
+        return []
 
     if result.returncode != 0:
         raise RuntimeError(
@@ -128,10 +139,13 @@ def find_process_for_path(path, event_timestamp):
     Finds the closest audit event matching a watchdog file event.
     Returns process information or None if no match is found.
     """
+    return match_process(read_audit_events(start="recent"), path, event_timestamp)
+
+
+def match_process(audit_events, path, event_timestamp):
+    """Same as find_process_for_path, but searches an already-read list."""
 
     target_path = str(Path(path).resolve())
-
-    audit_events = read_audit_events()
 
     matches = []
 

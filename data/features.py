@@ -7,6 +7,7 @@ Reference implementation; owner going forward: Snow.
 import csv
 import json
 import math
+from pathlib import Path
 from datetime import datetime, timezone
 
 FEATURE_COLUMNS = [
@@ -83,39 +84,77 @@ def load_jsonl(path):
 
 
 def build_dataset(events_path, manifest_path, out_path,
-                  window_seconds=1.0, step_seconds=0.25):
+                  window_seconds=1.0, step_seconds=0.25, grace_seconds=0.5,
+                  keep_unknown=False):
     """Contract A events + Contract D manifest -> Contract B CSV.
 
     Label rule: a window is 1 (attack) if at least one of its events falls
-    inside an attack run's [start_ts, end_ts]; otherwise 0.
-    run_id: the attack run if labelled 1, else the run containing the
-    window's first event.
+    inside an attack run's [start_ts, end_ts + grace]; otherwise 0.
+    The grace period catches the last few events of a run, which the monitor
+    can stamp a few milliseconds after the script records end_ts.
+    run_id: the attack run if labelled 1, else the normal run that contains
+    all of the window's events. Windows that belong to no run (e.g. manual
+    activity between runs) get run_id "unknown" and are dropped unless
+    keep_unknown=True.
     """
     events = load_jsonl(events_path)
-    runs = [dict(r, s=parse_ts(r["start_ts"]), e=parse_ts(r["end_ts"]))
+    runs = [dict(r, s=parse_ts(r["start_ts"]), e=parse_ts(r["end_ts"]) + grace_seconds)
             for r in load_jsonl(manifest_path)]
     attack = [r for r in runs if r["label"] == 1]
     rows = []
+    dropped = 0
     for start, evs in windows_for(events, window_seconds, step_seconds).items():
         times = [parse_ts(e["ts"]) for e in evs]
-        hit = next((r for r in attack if any(r["s"] <= t < r["e"] for t in times)), None)
-        owner = hit or next((r for r in runs if r["label"] == 0 and all(r["s"] <= t < r["e"] for t in times)), None) # assigns a normal run ID when all events fall inside the same normal run
+        hit = next((r for r in attack if any(r["s"] <= t <= r["e"] for t in times)), None)
+        owner = hit or next((r for r in runs if r["label"] == 0 and all(r["s"] <= t <= r["e"] for t in times)), None)
+        if owner is None and not keep_unknown:
+            dropped += 1
+            continue
         row = {"run_id": owner["run_id"] if owner else "unknown",
                "window_start": format_ts(start)}
         row.update(extract_features(evs, window_seconds))
         row["label"] = 1 if hit else 0
         rows.append(row)
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["run_id", "window_start"] + FEATURE_COLUMNS + ["label"])
         w.writeheader()
         w.writerows(rows)
+    if dropped:
+        print(f"dropped {dropped} windows that belong to no run")
     return len(rows)
 
 
+def summarize(csv_path):
+    """Print a sanity check of a built dataset. Catches the old monitor bug,
+    where every window held exactly one event."""
+    with open(csv_path, encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    for label, name in (("0", "normal"), ("1", "attack")):
+        sub = [r for r in rows if r["label"] == label]
+        if not sub:
+            print(f"{name:6}: no rows")
+            continue
+        counts = [int(r["event_count"]) for r in sub]
+        runs = {r["run_id"] for r in sub}
+        print(f"{name:6}: {len(sub):6} windows from {len(runs):3} runs | "
+              f"events/window mean {sum(counts) / len(counts):.2f}, max {max(counts)}")
+    if rows and max(int(r["event_count"]) for r in rows) <= 1:
+        print("WARNING: every window has at most 1 event - timestamps look spread out. "
+              "Is the fixed monitor.py running?")
+
+
 if __name__ == "__main__":
-    build_dataset(
-        "datasets/raw/events/events.jsonl", 
-        "datasets/raw/manifests/manifest.jsonl", 
-        "datasets/processed/dataset.csv"
-        )
-    
+    import argparse
+    from config_paths import load_config, PROJECT
+    cfg = load_config()
+    ap = argparse.ArgumentParser(description="Build the labelled window dataset (Story 6).")
+    ap.add_argument("--events", default=cfg["events_path"])
+    ap.add_argument("--manifest", default=cfg["manifest_path"])
+    ap.add_argument("--out", default=str(PROJECT / "datasets" / "processed" / "dataset.csv"))
+    ap.add_argument("--keep-unknown", action="store_true")
+    a = ap.parse_args()
+    n = build_dataset(a.events, a.manifest, a.out, cfg["window_seconds"], cfg["step_seconds"],
+                      keep_unknown=a.keep_unknown)
+    print(f"wrote {n} rows to {a.out}")
+    summarize(a.out)
