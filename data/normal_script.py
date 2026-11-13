@@ -15,10 +15,11 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
 
-PROJECT = Path(__file__).resolve().parent
-BASE_DIR = PROJECT / "lab-watch" / "normal"
-MANIFEST_PATH = PROJECT / "datasets" / "raw" / "manifests" / "manifest.jsonl"
-CONFIG_PATH = PROJECT / "config.json"
+from config_paths import PROJECT, load_config
+
+CONFIG = load_config()
+BASE_DIR = Path(CONFIG["watch_root"]) / "normal"
+MANIFEST_PATH = Path(CONFIG["manifest_path"])
 
 ALL_EXTENSIONS = [".txt", ".md", ".log", ".py", ".json", ".csv", ".docx", ".pdf", ".xlsx", ".sql", ".conf", ".jpg", ".png", ".pem"]
 
@@ -353,14 +354,15 @@ PATTERNS = {
 }
 
 
-def record_run(run_id, start_ts, end_ts, label):
+def record_run(run_id, start_ts, end_ts, label, **extra):
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     record = {
         "run_id": run_id,
         "start_ts": start_ts,
         "end_ts": end_ts,
-        "label": label
+        "label": label,
+        **extra
     }
 
     with MANIFEST_PATH.open("a", encoding="utf-8") as file:
@@ -381,7 +383,7 @@ def run_activity(name, pattern):
     pattern(folder, pacer)
 
     end_ts = timestamp()
-    record_run(run_id, start_ts, end_ts, 0)
+    record_run(run_id, start_ts, end_ts, 0, script="normal_script", pattern=name, timing=pacer.mode)
 
     print(f"Completed normal: {name}")
 

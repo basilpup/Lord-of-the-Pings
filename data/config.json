@@ -1,19 +1,20 @@
 {
   "schema_version": 1,
-  "watch_root": "/home/vboxuser/file-detection-pings/lab-watch",
+  "watch_root": "lab-watch",
   "canary_paths": [
-     "/home/vboxuser/file-detection-pings/lab-watch/Documents/passwords.docx",
-      "/home/vboxuser/file-detection-pings/lab-watch/Documents/tax_return_2025.pdf",
-      "/home/vboxuser/file-detection-pings/lab-watch/Documents/payroll.xlsx",
-      "/home/vboxuser/file-detection-pings/lab-watch/Desktop/client_list.csv",
-      "/home/vboxuser/file-detection-pings/lab-watch/backups/db_dump.sql",
-      "/home/vboxuser/file-detection-pings/lab-watch/.config/app/credentials.conf",
-      "/home/vboxuser/file-detection-pings/lab-watch/Pictures/passport_scan.jpg",
-      "/home/vboxuser/file-detection-pings/lab-watch/projects/keys/id_backup.pem"
+    "lab-watch/Documents/passwords.docx",
+    "lab-watch/Documents/tax_return_2025.pdf",
+    "lab-watch/Documents/payroll.xlsx",
+    "lab-watch/Desktop/client_list.csv",
+    "lab-watch/backups/db_dump.sql",
+    "lab-watch/.config/app/credentials.conf",
+    "lab-watch/Pictures/passport_scan.jpg",
+    "lab-watch/projects/keys/id_backup.pem"
   ],
-  "events_path": "/home/vboxuser/file-detection-pings/datasets/raw/events/events.jsonl",
-  "manifest_path": "/home/vboxuser/file-detection-pings/datasets/raw/manifests/manifest.jsonl",
-  "alerts_path": "/home/vboxuser/file-detection-pings/logs/alerts.jsonl",
+  "events_path": "datasets/raw/events/events.jsonl",
+  "manifest_path": "datasets/raw/manifests/manifest.jsonl",
+  "alerts_path": "logs/alerts.jsonl",
+  "canary_baseline_path": "datasets/canary_baseline.json",
   "window_seconds": 1.0,
   "step_seconds": 0.25
 }

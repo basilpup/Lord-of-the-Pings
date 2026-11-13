@@ -1,0 +1,61 @@
+{
+  "created": "2026-11-13T06:05:09.023Z",
+  "canaries": [
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/Documents/passwords.docx",
+      "ext": ".docx",
+      "size_bytes": 36666,
+      "sha256": "7126df3565aa90e69ef1bae39ef111d5195897d93426de845279bff73bd2fff3",
+      "mtime": "2026-11-13T06:05:08.846Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/Documents/tax_return_2025.pdf",
+      "ext": ".pdf",
+      "size_bytes": 1570,
+      "sha256": "a9953fb4419e18ebc5a1339844dab3fee2497858a3a4cec76fed8273a183d1d7",
+      "mtime": "2026-11-13T06:05:08.854Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/Documents/payroll.xlsx",
+      "ext": ".xlsx",
+      "size_bytes": 4937,
+      "sha256": "54ac2f0ab61fd9a21d1f95938c9a4710413a6aa040a128337660f98a0bf220b5",
+      "mtime": "2026-11-13T06:05:08.877Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/Desktop/client_list.csv",
+      "ext": ".csv",
+      "size_bytes": 95,
+      "sha256": "1243897d06222b55465896f1e08e29ad42d6ed2044b316871adffed8a486c19b",
+      "mtime": "2026-11-13T06:05:08.879Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/backups/db_dump.sql",
+      "ext": ".sql",
+      "size_bytes": 146,
+      "sha256": "7782addf98dab35212431cc9119a529b773a24d79962129f0087db1464035d11",
+      "mtime": "2026-11-13T06:05:08.880Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/.config/app/credentials.conf",
+      "ext": ".conf",
+      "size_bytes": 48,
+      "sha256": "00caf5256f23802c844159dad5437c13a327bf4b599fc563963285c02cf73e74",
+      "mtime": "2026-11-13T06:05:08.881Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/Pictures/passport_scan.jpg",
+      "ext": ".jpg",
+      "size_bytes": 7269,
+      "sha256": "46095e5f9091d41ab78e0d1666b371d1a6047bf610708cc37c3579a937c2c9ed",
+      "mtime": "2026-11-13T06:05:08.911Z"
+    },
+    {
+      "path": "/home/combat-wombat/Lord-of-the-pings/data/lab-watch/projects/keys/id_backup.pem",
+      "ext": ".pem",
+      "size_bytes": 1679,
+      "sha256": "af54d053b72adbee7de3eebd795a589475c163d7402f05f3ba9bd7001c16ccc0",
+      "mtime": "2026-11-13T06:05:09.022Z"
+    }
+  ]
+}

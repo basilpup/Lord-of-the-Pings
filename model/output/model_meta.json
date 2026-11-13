@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "placeholder": false,
+  "note": "random_forest trained on dataset.csv. Metrics are from held-out runs; the exported model is refit on all runs.",
+  "model_type": "random_forest",
+  "feature_columns": [
+    "event_count",
+    "n_create",
+    "n_modify",
+    "n_rename",
+    "n_delete",
+    "n_ext_change",
+    "n_unique_files",
+    "n_canary_touched",
+    "mean_gap_ms",
+    "min_gap_ms",
+    "mean_entropy",
+    "max_entropy",
+    "n_unique_processes"
+  ],
+  "threshold": 0.9827,
+  "canary_override": true,
+  "window_seconds": 1.0,
+  "step_seconds": 0.25,
+  "python_version": "3.12.3",
+  "sklearn_version": "1.8.0",
+  "trained_on": {
+    "file": "dataset.csv",
+    "windows": 5711,
+    "runs": 105
+  },
+  "target_recall": 0.8,
+  "held_out": {
+    "threshold": 0.9827,
+    "window": {
+      "tn": 582,
+      "fp": 2,
+      "fn": 158,
+      "tp": 688,
+      "recall": 0.8132,
+      "false_positive_rate": 0.0034,
+      "precision": 0.9971
+    },
+    "run": {
+      "attack_runs": 14,
+      "attack_runs_detected": 14,
+      "normal_runs": 14,
+      "normal_runs_with_false_alarm": 1,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 11.75,
+      "detected_within_500ms": 12
+    }
+  },
+  "held_out_with_canary_rule": {
+    "threshold": 0.9827,
+    "window": {
+      "tn": 582,
+      "fp": 2,
+      "fn": 152,
+      "tp": 694,
+      "recall": 0.8203,
+      "false_positive_rate": 0.0034,
+      "precision": 0.9971
+    },
+    "run": {
+      "attack_runs": 14,
+      "attack_runs_detected": 14,
+      "normal_runs": 14,
+      "normal_runs_with_false_alarm": 1,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 11.75,
+      "detected_within_500ms": 12
+    }
+  },
+  "inference_latency": {
+    "p50_ms": 18.023,
+    "p99_ms": 26.598,
+    "max_ms": 32.978
+  }
+}

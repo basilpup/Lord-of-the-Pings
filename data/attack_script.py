@@ -1,16 +1,18 @@
 import json
+import os
 import random
 import shutil
 import time
 import uuid
 from pathlib import Path
 
-from normal_script import (ALL_EXTENSIONS, create_sample,  edit_sample, timestamp)
+from normal_script import ALL_EXTENSIONS, create_sample, timestamp
 
-PROJECT = Path(__file__).resolve().parent
-BASE_DIR = PROJECT / "lab-watch" / "attack_run"
-MANIFEST_PATH = PROJECT / "datasets" / "raw" / "manifests" / "manifest.jsonl"
-CONFIG_PATH = PROJECT / "config.json"
+from config_paths import PROJECT, load_config
+
+CONFIG = load_config()
+BASE_DIR = Path(CONFIG["watch_root"]) / "attack_run"
+MANIFEST_PATH = Path(CONFIG["manifest_path"])
 
 class ActivityPacer:
     """Vary activity timing to avoid identical event patterns."""
@@ -25,9 +27,6 @@ class ActivityPacer:
             time.sleep(random.uniform(0.5, 1))
         else:
             time.sleep(random.uniform(0.02, 0.1))
-
-def load_config():
-    return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
 
 def touch_canaries():
     """
@@ -53,34 +52,36 @@ def touch_canaries():
                 file.write(b"\nSIMULATED SUSPICIOUS MODIFICATION\n")
             print(f"Touched binary canary: {canary.name}")
 
-def create_attack_files(folder, count, extensions=None, pacer=None):
-    """Create files inside the current attack run directory."""
+def create_victim_files(folder, count, extensions=None):
+    """Setup, NOT part of the attack: create the 'user files' the attack will hit.
+    Real ransomware finds files that already exist, so this runs quickly and
+    before the run's start_ts is recorded (those windows are not labelled)."""
     folder.mkdir(parents=True, exist_ok=True)
-
     if extensions is None:
         extensions = ALL_EXTENSIONS
-
     paths = []
-
     for _ in range(count):
-        ext = random.choice(extensions)
-        path = folder / f"attack_{uuid.uuid4().hex[:8]}{ext}"
-
+        path = folder / f"file_{uuid.uuid4().hex[:8]}{random.choice(extensions)}"
         create_sample(path)
         paths.append(path)
-
-        if pacer:
-            pacer.pause()
     return paths
 
 
+def simulate_encrypt(path):
+    """Overwrite a generated lab file with random bytes of the same size.
+    This mimics the high-entropy output of encryption. It only ever touches
+    files this run created inside its own run folder; nothing is recoverable
+    or needs to be, and no key exists."""
+    size = max(path.stat().st_size, 1024)
+    path.write_bytes(os.urandom(size))
+
+
 def modify_files(paths, pacer, passes=1):
-    """Modify the supplied generated files one or more times."""
+    """'Encrypt' the supplied generated files one or more times."""
     for _ in range(passes):
         for path in paths:
             if path.exists():
-                edit_sample(path)
-
+                simulate_encrypt(path)
             pacer.pause()
 
 
@@ -133,120 +134,97 @@ def delete_generated_files(paths, run_folder, pacer):
             resolved_path.unlink()
         pacer.pause()
 
-def attack_burst(folder, pacer):
-    paths = create_attack_files(folder, random.randint(20, 40), ALL_EXTENSIONS, pacer)
+# Each pattern = (number of victim files, their extensions, what the attack does).
+# The victim files are created during setup; only the action is labelled as attack.
+
+def attack_burst(paths, folder, pacer):
     modify_files(paths, pacer, passes=2)
     rename_to_simulated_locked(paths, pacer)
 
-def attack_mass_rename(folder, pacer):
-    paths = create_attack_files(folder, random.randint(12, 30), ALL_EXTENSIONS, pacer)
+def attack_mass_rename(paths, folder, pacer):
     rename_to_simulated_locked(paths, pacer)
 
-def attack_repeated_modify(folder, pacer):
-    paths = create_attack_files(folder, random.randint(8, 20), ALL_EXTENSIONS, pacer)
+def attack_repeated_modify(paths, folder, pacer):
     modify_files(paths, pacer, passes=3)
 
-def attack_copy_burst(folder, pacer):
-    paths = create_attack_files(folder, random.randint(10, 25), ALL_EXTENSIONS, pacer)
+def attack_copy_burst(paths, folder, pacer):
+    # Write encrypted copies, then remove the originals (common ransomware style).
     copied = copy_files(paths, folder / "copies", pacer)
+    modify_files(copied, pacer)
     rename_to_simulated_locked(copied, pacer)
+    delete_generated_files(paths, folder, pacer)
 
-def attack_document_batch(folder, pacer):
-    paths = create_attack_files(folder, random.randint(10, 25), [".docx", ".pdf", ".xlsx", ".csv"], pacer)
-
-    modify_files(paths, pacer, passes=2)
+def attack_encrypt_rename(paths, folder, pacer):
+    modify_files(paths, pacer)
     rename_to_simulated_locked(paths, pacer)
 
-def attack_image_batch(folder, pacer):
-    paths = create_attack_files(folder, random.randint(10, 25), [".jpg", ".png", ".pdf"], pacer)
-
-    modify_files(paths, pacer, passes=2)
+def attack_extension_change(paths, folder, pacer):
     rename_to_simulated_locked(paths, pacer)
 
-def attack_config_batch(folder, pacer):
-    paths = create_attack_files(folder, random.randint(10, 25), [".sql", ".conf", ".json", ".csv", ".pem"], pacer)
-
-    modify_files(paths, pacer, passes=2)
-    rename_to_simulated_locked(paths, pacer)
-
-def attack_extension_change(folder, pacer):
-    paths = create_attack_files(folder, random.randint(15, 30), ALL_EXTENSIONS, pacer)
-    rename_to_simulated_locked(paths, pacer)
-
-def attack_mixed_cleanup(folder, pacer):
-    paths = create_attack_files(folder, random.randint(15, 30), ALL_EXTENSIONS, pacer)
-
-    modify_files(paths, pacer, passes=2)
-
-    # Copy files into a run-specific directory.
+def attack_mixed_cleanup(paths, folder, pacer):
+    modify_files(paths, pacer)
     copied = copy_files(paths, folder / "temporary_copies", pacer)
-
-    # Delete only those copies created by this run.
     delete_generated_files(copied, folder, pacer)
-
-    # Rename a selection of the original generated files.
     selected = random.sample(paths, min(len(paths), random.randint(4, 10)))
-
     rename_to_simulated_locked(selected, pacer)
 
+def attack_partial_encrypt(paths, folder, pacer):
+    # Stealthier: encrypt only a subset, no renames.
+    modify_files(random.sample(paths, max(1, len(paths) // 3)), pacer)
 
-def attack_canary_batch(folder, pacer):
-    paths = create_attack_files(
-        folder,
-        random.randint(10, 25),
-        ALL_EXTENSIONS,
-        pacer
-    )
 
-    modify_files(paths, pacer, passes=2)
-    rename_to_simulated_locked(paths, pacer)
-
+DOCS = [".docx", ".pdf", ".xlsx", ".csv"]
+IMAGES = [".jpg", ".png", ".pdf"]
+CONFIGS = [".sql", ".conf", ".json", ".csv", ".pem"]
 
 PATTERNS = {
-    "burst": attack_burst,
-    "mass_rename": attack_mass_rename,
-    "repeated_modify": attack_repeated_modify,
-    "copy_burst": attack_copy_burst,
-    "document_batch": attack_document_batch,
-    "image_batch": attack_image_batch,
-    "config_batch": attack_config_batch,
-    "extension_change": attack_extension_change,
-    "mixed_cleanup": attack_mixed_cleanup,
-    "canary_batch": attack_canary_batch,
+    "burst":            ((20, 40), ALL_EXTENSIONS, attack_burst),
+    "mass_rename":      ((12, 30), ALL_EXTENSIONS, attack_mass_rename),
+    "repeated_modify":  ((8, 20),  ALL_EXTENSIONS, attack_repeated_modify),
+    "copy_burst":       ((10, 25), ALL_EXTENSIONS, attack_copy_burst),
+    "document_batch":   ((10, 25), DOCS,           attack_encrypt_rename),
+    "image_batch":      ((10, 25), IMAGES,         attack_encrypt_rename),
+    "config_batch":     ((10, 25), CONFIGS,        attack_encrypt_rename),
+    "extension_change": ((15, 30), ALL_EXTENSIONS, attack_extension_change),
+    "mixed_cleanup":    ((15, 30), ALL_EXTENSIONS, attack_mixed_cleanup),
+    "canary_batch":     ((10, 25), ALL_EXTENSIONS, attack_encrypt_rename),
+    "partial_encrypt":  ((15, 30), ALL_EXTENSIONS, attack_partial_encrypt),
 }
 
 
-def record_run(run_id, start_ts, end_ts, label):
+def record_run(run_id, start_ts, end_ts, label, **extra):
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-    record = {
-        "run_id": run_id,
-        "start_ts": start_ts,
-        "end_ts": end_ts,
-        "label": label
-    }
+    record = {"run_id": run_id, "start_ts": start_ts, "end_ts": end_ts, "label": label, **extra}
     with MANIFEST_PATH.open("a", encoding="utf-8") as file:
         file.write(json.dumps(record) + "\n")
 
 
+SETUP_QUIET_SECONDS = 2.0   # > window_seconds, so setup and attack never share a window
+
+
 def run_activity(name, pattern):
+    (low, high), extensions, action = pattern
     run_id = f"attack_{name}_{uuid.uuid4().hex[:10]}"
     folder = BASE_DIR / name / run_id
-    folder.mkdir(parents=True, exist_ok=True)
+
+    # Setup (unlabelled): the victim's existing files.
+    paths = create_victim_files(folder, random.randint(low, high), extensions)
+    time.sleep(SETUP_QUIET_SECONDS)
 
     pacer = ActivityPacer()
     start_ts = timestamp()
     print(f"\nStarting attack: {name}")
     print(f"Run ID: {run_id}")
     print(f"Timing mode: {pacer.mode}")
-    pattern(folder, pacer)
+    action(paths, folder, pacer)
 
-    # Trigger canaries for all batch/destructive attacks or whenever appropriate
-    if "batch" in name or "cleanup" in name or name == "canary_batch":
+    # Trigger canaries for all batch/destructive attacks
+    if "batch" in name or "cleanup" in name:
         touch_canaries()
 
     end_ts = timestamp()
-    record_run(run_id, start_ts, end_ts, 1)
-
+    record_run(run_id, start_ts, end_ts, 1, script="attack_script", pattern=name,
+               timing=pacer.mode, files=len(paths))
     print(f"Completed attack: {name}")
 
 

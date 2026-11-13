@@ -1,0 +1,86 @@
+{
+  "logistic_regression": {
+    "threshold": 0.8582,
+    "window": {
+      "tn": 1738,
+      "fp": 10,
+      "fn": 506,
+      "tp": 2027,
+      "recall": 0.8002,
+      "false_positive_rate": 0.0057,
+      "precision": 0.9951
+    },
+    "run": {
+      "attack_runs": 41,
+      "attack_runs_detected": 41,
+      "normal_runs": 36,
+      "normal_runs_with_false_alarm": 4,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 25.25,
+      "detected_within_500ms": 34
+    }
+  },
+  "decision_tree": {
+    "threshold": 1.0,
+    "window": {
+      "tn": 1690,
+      "fp": 58,
+      "fn": 331,
+      "tp": 2202,
+      "recall": 0.8693,
+      "false_positive_rate": 0.0332,
+      "precision": 0.9743
+    },
+    "run": {
+      "attack_runs": 41,
+      "attack_runs_detected": 41,
+      "normal_runs": 36,
+      "normal_runs_with_false_alarm": 12,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 24.25,
+      "detected_within_500ms": 37
+    }
+  },
+  "random_forest": {
+    "threshold": 0.9827,
+    "window": {
+      "tn": 1745,
+      "fp": 3,
+      "fn": 499,
+      "tp": 2034,
+      "recall": 0.803,
+      "false_positive_rate": 0.0017,
+      "precision": 0.9985
+    },
+    "run": {
+      "attack_runs": 41,
+      "attack_runs_detected": 41,
+      "normal_runs": 36,
+      "normal_runs_with_false_alarm": 3,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 24.25,
+      "detected_within_500ms": 31
+    }
+  },
+  "gradient_boosting": {
+    "threshold": 1.0,
+    "window": {
+      "tn": 1744,
+      "fp": 4,
+      "fn": 504,
+      "tp": 2029,
+      "recall": 0.801,
+      "false_positive_rate": 0.0023,
+      "precision": 0.998
+    },
+    "run": {
+      "attack_runs": 41,
+      "attack_runs_detected": 41,
+      "normal_runs": 36,
+      "normal_runs_with_false_alarm": 4,
+      "time_to_detect_median_s": 0.25,
+      "time_to_detect_max_s": 24.25,
+      "detected_within_500ms": 35
+    }
+  }
+}
